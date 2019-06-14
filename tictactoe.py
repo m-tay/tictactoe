@@ -68,7 +68,7 @@ class Board:
         # otherwise, return false - no end state detected
         return False
    
-    # used by basic af AI to play
+    # used by basic AI to play
     def getRandomFreePosition(self):
         while(True):
             randomCell = random.randint(0,8)
@@ -113,54 +113,72 @@ class AiPlayer:
         else:
             return 'X'
         
-    # function to solve board 
+    # implements recursive minimax algorithm 
     def minimax(self, board, player):
         
+        # set up best score initial values 
+        if(player == self.cpu):
+            bestScore = 0
+        else:
+            bestScore = 10            
+
         # base cases - check for terminal board states
         boardOutcome = board.isGameWon()
 
         if(boardOutcome == self.cpu):   # cpu has won (yay)
             return 10
         if(boardOutcome == self.human):  # fleshy human has won (boo)
-            return -10
-        if(boardOutcome == 'D'):    # draw (meh)
             return 0
-                                                                                
-        # set up best score initial values 
-        if(player == self.cpu):
-            bestScore = 0
-        else:
-            bestScore = 100            
-
+        if(boardOutcome == 'D'):    # draw (meh)
+            return 5
+                         
         # get free cells and loop through them
         freeCells = board.getFreeCells()
         for cell in freeCells:
             board.setState(cell, player)    
             moveScore = self.minimax(board, self.getOpposite(player)) # get score
             board.clearState(cell)   # undo move
-            return max(bestScore, moveScore)
+
+            # if cpu, maximise score
+            if(player == self.cpu):
+                bestScore = max(bestScore, moveScore)
+
+            # if human, minimise score
+            if(player == self.human):
+                bestScore = min(bestScore, moveScore)
+
+        return bestScore
 
     # function to manage minimax results and select the best move
     def getBestMove(self, board, player):
         
+        # get free cells and make empty list to store options
         freeCells = board.getFreeCells()
         freeCellOptions = []
         
-
+        # loop through all available cells
         for cell in freeCells:
-            board.setState(cell, player)
-            moveScore = self.minimax(board, player)
-            board.clearState(cell)   # undo move
 
+            board.setState(cell, player) # add move 
+
+            # get score from minimax (minimising player first)
+            moveScore = self.minimax(board, self.getOpposite(player))
+            
+            board.clearState(cell)   # undo move
+            
             # check score to see if worth saving
-            if moveScore > 0:
-                freeCellOptions = [cell]  # winning move becomes the list
-            elif moveValue == 0:
+            if moveScore > 5:               # is it better than a draw?
+                freeCellOptions = [cell]    # winning move becomes the list
+                
+            elif moveScore == 5:
                 freeCellOptions.append(cell) # draws just add to list
 
+        # return the best move
         if len(freeCellOptions) > 0:
+            # if multiple best moves, return a random one
             return random.choice(freeCellOptions)
         else:
+            # otherwise just play whatever
             return random.choice(board.getFreeCells())
 
 
